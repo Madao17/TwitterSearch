@@ -10,7 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 public class UserInfoListItem {
-	private String userName, tweet;
+	private String userName, tweet, user_profile_image_url;
 	private Bitmap user_profile_image;
 	
 	public String getUserName() {
@@ -31,6 +31,7 @@ public class UserInfoListItem {
 	public void setUser_profile_image(String user_profile_image_url) {
 		//this.user_profile_image = user_profile_image;
 		BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+		setUser_profile_image_url(user_profile_image_url);
 		user_profile_image = LoadImage(user_profile_image_url, bmOptions);
 	}
 	
@@ -63,6 +64,14 @@ public class UserInfoListItem {
 		 catch (Exception ex){}
 		 
 		 return inputStream;
+	}
+	
+	public String getUser_profile_image_url() {
+		return user_profile_image_url;
+	}
+	
+	public void setUser_profile_image_url(String user_profile_image_url) {
+		this.user_profile_image_url = user_profile_image_url;
 	}
 	
 }

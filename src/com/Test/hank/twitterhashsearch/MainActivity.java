@@ -1,16 +1,11 @@
 package com.Test.hank.twitterhashsearch;
 
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -39,66 +34,38 @@ public class MainActivity extends Activity {
         
         progressbar.setVisibility(View.INVISIBLE);
         
-        searchButton.setOnClickListener(new OnClickListener() {
+        // check connectivity
+        if(isOnline()) {
+        	searchButton.setOnClickListener(new OnClickListener() {
 
-			@Override
-			public void onClick(View arg0) {
-				// TODO Auto-generated method stub
-				progressbar.setVisibility(View.VISIBLE);
-				new TwitterResultLoader().execute("http://search.twitter.com/search.json?q=" + searchText.getText());
-				
-				
-			}
-        	
-        });
-    }
-    
-    public class TwitterResultLoader extends AsyncTask<String, Void, String> {
-
-		@Override
-		protected String doInBackground(String... url) {
-			
-			URL twitterURL;
-			BufferedReader in = null;
-			String JsonString = "";
-			
-			try {
-				twitterURL = new URL(url[0]);
-				HttpURLConnection urlConnect = (HttpURLConnection) twitterURL.openConnection();
-				in = new BufferedReader(new InputStreamReader(urlConnect.getInputStream()));
-				JsonString = in.readLine();
-				
-			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			return JsonString;
-		}
-		
-		protected void onPostExecute(String result) {
-			// start new activity
-			Intent intent = new Intent(MainActivity.this, SearchResultActivity.class);
-			Bundle bundle = new Bundle();
-			bundle.putString("inJson", result);
-			
-			intent.putExtras(bundle);
-			
-			//progressbar.setVisibility(View.INVISIBLE);
-			startActivityForResult(intent, 0);
-			progressbar.setVisibility(View.INVISIBLE);
-	    }
-    	
+				@Override
+				public void onClick(View arg0) {
+					// TODO Auto-generated method stub
+					progressbar.setVisibility(View.VISIBLE);
+					//new TwitterResultLoader(MainActivity.this, SearchResultActivity.class).execute("http://search.twitter.com/search.json?q=" + searchText.getText());
+					
+					if(!searchText.getText().toString().contains(" ") && searchText.getText().toString().compareTo("") != 0) {
+						new TwitterResultLoader(MainActivity.this, 
+								SearchResultActivity.class).execute("http://search.twitter.com/search.json?q="+searchString(searchText.getText().toString()));
+					}
+					else {
+						
+					}
+				}
+	        	
+	        });
+        }
+        else {
+        	tweetCountText.setText("No Internet Connection.");
+        }
+        
     }
     
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         //TODO handle here. 
-        
+        progressbar.setVisibility(View.INVISIBLE);
         //Log.d("requestCode", requestCode+"");
         
         if(requestCode == 0) {
@@ -112,5 +79,26 @@ public class MainActivity extends Activity {
         		tweetCountText.setText(tweetCount+"");
         	}
         }
+    }
+    
+    // check connectivity
+    private boolean isOnline() {
+    	ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+    	if(cm.getActiveNetworkInfo() != null && cm.getActiveNetworkInfo().isAvailable() && cm.getActiveNetworkInfo().isConnected())
+    		return true;
+    	else
+    		return false;
+    }
+    
+    // hashtag analysis
+    private String searchString(String str) {
+    	
+    	// if str contains no hashtag
+    	if(!str.contains("#")) {
+    		return str;
+    	}
+    	// if str contains hashtag(s)
+    	
+    	return str.replaceAll("#", "%23");
     }
 }

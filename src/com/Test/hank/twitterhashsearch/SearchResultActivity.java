@@ -2,24 +2,30 @@ package com.Test.hank.twitterhashsearch;
 
 import java.util.ArrayList;
 
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Activity;
 import android.app.ListActivity;
 import android.content.Intent;
+import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 public class SearchResultActivity extends ListActivity {
 
 	private ArrayList<UserInfoListItem> Users = null;
 	private ArrayAdapter<UserInfoListItem> Adapter = null;
-	
-	int tweetCount = 0;
+	String jsonString;
+	int tweetCount = 0, currentTweet = 0;
+	Bundle bundle;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -27,7 +33,8 @@ public class SearchResultActivity extends ListActivity {
 		setContentView(R.layout.activity_search_result);
 		
 		Users = new ArrayList<UserInfoListItem>();
-		String jsonString;
+		Adapter = new UserInfoAdapter(SearchResultActivity.this, R.layout.row, Users);
+		
 		// dummy object
 		/*
 		UserInfoListItem ui = new UserInfoListItem();
@@ -36,7 +43,8 @@ public class SearchResultActivity extends ListActivity {
 		ui.setUserName("Hank");
 		Users.add(ui);
 		*/
-		Bundle bundle = getIntent().getExtras();
+		
+		bundle = getIntent().getExtras();
 		jsonString = bundle.getString("inJson");
 		
 		try {
@@ -46,7 +54,7 @@ public class SearchResultActivity extends ListActivity {
 			//Log.d("JSONArrayLength", twitterSearchResult.length()+"");
 			
 			tweetCount = twitterSearchResult.length();
-			
+			/*
 			for(int i = 0; i < tweetCount; i++) {
 				UserInfoListItem ui = new UserInfoListItem();
 				JSONObject user = twitterSearchResult.getJSONObject(i);
@@ -55,20 +63,17 @@ public class SearchResultActivity extends ListActivity {
 				ui.setTweet(user.getString("text"));
 				ui.setUser_profile_image(user.getString("profile_image_url"));
 				Users.add(ui);
-				
-				
 			}
+			*/
+			new TwitterResult().execute(twitterSearchResult);
 			
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
 		
-		Adapter = new UserInfoAdapter(this, R.layout.row, Users);
-		setListAdapter(Adapter);
-		
 	}
-	
+
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event)  {
 	    if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
@@ -87,5 +92,65 @@ public class SearchResultActivity extends ListActivity {
 
 	    return super.onKeyDown(keyCode, event);
 	}
+	
+	public class TwitterResult extends AsyncTask<JSONArray, Void, ArrayList<UserInfoListItem>> {
+
+		@Override
+		protected ArrayList<UserInfoListItem> doInBackground(JSONArray... params) {
+			// TODO Auto-generated method stub
+			try {
+				//Log.d("tweetCount", tweetCount+"");
+				//Log.d("params", params.length+"");
+				if(params.length == 1) {
+					for(int i = 0; i < tweetCount; i++) {
+						UserInfoListItem ui = new UserInfoListItem();
+						JSONObject user = params[0].getJSONObject(i);
+						
+						ui.setUserName(user.getString("from_user"));
+						ui.setTweet(user.getString("text"));
+						ui.setUser_profile_image(user.getString("profile_image_url"));
+						Users.add(ui);
+					}
+				}
+				
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+			
+			
+			return Users;
+		}
+
+		@Override
+		protected void onPostExecute(ArrayList<UserInfoListItem> result) {
+			// TODO Auto-generated method stub
+			super.onPostExecute(result);
+			
+			Adapter = new UserInfoAdapter(SearchResultActivity.this, R.layout.row, result);
+			setListAdapter(Adapter);
+		}
+	}
+
+	@Override
+	protected void onListItemClick(ListView l, View v, int position, long id) {
+		// TODO Auto-generated method stub
+		super.onListItemClick(l, v, position, id);
+		//Log.d("id", id+"");
+		//Log.d("position", position+"");
+		
+		UserInfoListItem uii =(UserInfoListItem) l.getItemAtPosition(position);
+		
+		Bundle bundle = new Bundle();
+		bundle.putString("username", uii.getUserName());
+		bundle.putString("tweet", uii.getTweet());
+		bundle.putString("profile_img", uii.getUser_profile_image_url());
+		
+		Intent intent = new Intent(this, UserInfoActivity.class);
+		intent.putExtras(bundle);
+		
+		startActivity(intent);
+	}
+	
+	
 
 }
